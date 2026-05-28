@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMG Dispatcher — Back Office Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'">
+<style>
+:root{--gold:#C9A84C;--gold-light:#E2C47A;--gold-dim:#7A5E28;--navy:#0D1B2A;--navy-mid:#132336;--navy-card:#1A2D42;--navy-hover:#1F3550;--navy-border:#254260;--steel:#2E4A66;--text:#F0EAD8;--text-muted:#8A9CB5;--text-dim:#4A6282;--success:#2ECC8A;--success-bg:rgba(46,204,138,.12);--warning:#F0A500;--warning-bg:rgba(240,165,0,.12);--danger:#E05252;--danger-bg:rgba(224,82,82,.12);--info:#4A9FD5;--info-bg:rgba(74,159,213,.12);--radius:8px;--radius-lg:12px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100vh;background:var(--navy);color:var(--text);font-family:'DM Sans','Segoe UI',Arial,sans-serif;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--navy);}::-webkit-scrollbar-thumb{background:var(--steel);border-radius:3px;}
+
+/* LOGIN */
+#bo-login{position:fixed;inset:0;background:var(--navy);z-index:999;display:flex;align-items:center;justify-content:center;padding:24px;}
+.bo-login-card{background:var(--navy-mid);border:1px solid var(--navy-border);border-radius:var(--radius-lg);width:400px;max-width:100%;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.6);}
+.bo-lh{background:linear-gradient(135deg,#0D1B2A,rgba(13,27,42,.6));padding:28px;text-align:center;border-bottom:1px solid var(--navy-border);}
+.bo-lh h1{font-family:'Bebas Neue',Impact,sans-serif;font-size:22px;letter-spacing:2px;color:var(--gold);}
+.bo-lh p{font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--text-muted);margin-top:3px;}
+.bo-lbody{padding:24px;}
+.bo-field{margin-bottom:13px;}
+.bo-field label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin-bottom:4px;font-weight:500;}
+.bo-field input{width:100%;background:rgba(13,27,42,.8);border:1px solid var(--navy-border);border-radius:var(--radius);padding:10px 12px;color:var(--text);font-size:13px;font-family:'DM Sans','Segoe UI',Arial,sans-serif;outline:none;}
+.bo-field input:focus{border-color:var(--gold-dim);}
+.bo-btn{width:100%;padding:11px;background:var(--gold);color:var(--navy);border:none;border-radius:var(--radius);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:'DM Sans','Segoe UI',Arial,sans-serif;cursor:pointer;}
+.bo-btn:hover{background:var(--gold-light);}
+.bo-err{background:var(--danger-bg);border:1px solid rgba(224,82,82,.3);border-radius:var(--radius);padding:8px 12px;font-size:12px;color:var(--danger);margin-bottom:12px;display:none;}
+
+/* MAIN ADMIN */
+#bo-main{display:none;}
+.bo-topbar{background:rgba(13,27,42,.97);border-bottom:1px solid var(--navy-border);padding:0 28px;height:56px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;}
+.bo-logo{font-family:'Bebas Neue',Impact,sans-serif;font-size:20px;letter-spacing:1.5px;color:var(--gold);}
+.bo-logo span{color:var(--text-muted);font-size:11px;font-family:'DM Sans','Segoe UI',Arial,sans-serif;text-transform:uppercase;letter-spacing:.15em;margin-left:8px;font-weight:300;}
+.bo-logout{margin-left:auto;padding:5px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--navy-border);border-radius:var(--radius);cursor:pointer;background:transparent;color:var(--text-muted);font-family:'DM Sans','Segoe UI',Arial,sans-serif;}
+.bo-logout:hover{color:var(--danger);border-color:rgba(224,82,82,.4);}
+.bo-shell{display:flex;min-height:calc(100vh - 56px);}
+.bo-sidebar{width:200px;min-width:200px;background:var(--navy-mid);border-right:1px solid var(--navy-border);padding:16px 0;}
+.bo-nav-item{display:flex;align-items:center;gap:9px;padding:9px 18px;font-size:13px;color:var(--text-muted);cursor:pointer;border-left:3px solid transparent;transition:all .15s;}
+.bo-nav-item:hover{background:var(--navy-hover);color:var(--text);}
+.bo-nav-item.active{background:rgba(201,168,76,.08);color:var(--gold);border-left-color:var(--gold);}
+.bo-nav-section{font-size:9px;text-transform:uppercase;letter-spacing:.15em;color:var(--text-dim);padding:12px 18px 5px;margin-top:8px;}
+.bo-main-content{flex:1;padding:28px;overflow-y:auto;}
+.bo-page{display:none;}.bo-page.active{display:block;}
+.bo-page-title{font-family:'Bebas Neue',Impact,sans-serif;font-size:26px;letter-spacing:1.5px;margin-bottom:20px;}
+.bo-page-title span{color:var(--gold);}
+
+/* Tables */
+.bo-table-wrap{background:var(--navy-card);border:1px solid var(--navy-border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:20px;}
+.bo-table-header{padding:14px 18px;border-bottom:1px solid var(--navy-border);display:flex;align-items:center;justify-content:space-between;}
+.bo-table-title{font-family:'Bebas Neue',Impact,sans-serif;font-size:15px;letter-spacing:1px;color:var(--text);}
+.bo-table{width:100%;border-collapse:collapse;font-size:13px;}
+.bo-table th{text-align:left;padding:8px 14px;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:1px solid var(--navy-border);font-weight:500;}
+.bo-table td{padding:10px 14px;border-bottom:1px solid rgba(37,66,96,.35);color:var(--text-muted);vertical-align:middle;}
+.bo-table tr:last-child td{border-bottom:none;}
+.bo-table tr:hover td{background:rgba(37,66,96,.2);}
+.mono{font-family:'DM Mono','Courier New',monospace;font-size:12px;}
+.badge-sm{display:inline-flex;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;font-family:'DM Mono','Courier New',monospace;}
+.bs-admin{background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.3);}
+.bs-client{background:var(--info-bg);color:var(--info);border:1px solid rgba(74,159,213,.3);}
+.bs-contractor{background:var(--success-bg);color:var(--success);border:1px solid rgba(46,204,138,.3);}
+.bs-active{background:var(--success-bg);color:var(--success);border:1px solid rgba(46,204,138,.3);}
+.bs-inactive{background:var(--danger-bg);color:var(--danger);border:1px solid rgba(224,82,82,.3);}
+.bo-btn-sm{padding:4px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border:1px solid var(--navy-border);border-radius:5px;cursor:pointer;background:transparent;color:var(--text-muted);font-family:'DM Sans','Segoe UI',Arial,sans-serif;transition:all .15s;}
+.bo-btn-sm:hover{background:var(--navy-hover);color:var(--text);}
+.bo-btn-danger{border-color:rgba(224,82,82,.4);color:var(--danger);}.bo-btn-danger:hover{background:var(--danger-bg);}
+.bo-btn-success{border-color:rgba(46,204,138,.4);color:var(--success);}.bo-btn-success:hover{background:var(--success-bg);}
+.bo-btn-gold{border-color:rgba(201,168,76,.4);color:var(--gold);}.bo-btn-gold:hover{background:rgba(201,168,76,.1);}
+
+/* Stats */
+.bo-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.bo-stat{background:var(--navy-card);border:1px solid var(--navy-border);border-radius:var(--radius-lg);padding:14px 18px;position:relative;overflow:hidden;}
+.bo-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.bs-s1::before{background:var(--gold);}.bs-s2::before{background:var(--info);}.bs-s3::before{background:var(--success);}.bs-s4::before{background:#9B59B6;}
+.bo-stat-val{font-family:'Bebas Neue',Impact,sans-serif;font-size:34px;letter-spacing:1px;line-height:1;}
+.bo-stat-label{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin-bottom:4px;}
+.bs-sv1{color:var(--gold);}.bs-sv2{color:var(--info);}.bs-sv3{color:var(--success);}.bs-sv4{color:#9B59B6;}
+
+/* Modal */
+.bo-modal-overlay{position:fixed;inset:0;background:rgba(8,16,26,.88);backdrop-filter:blur(6px);z-index:500;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;}
+.bo-modal{background:var(--navy-mid);border:1px solid var(--navy-border);border-radius:var(--radius-lg);width:580px;max-width:100%;}
+.bo-modal-header{padding:16px 20px;border-bottom:1px solid var(--navy-border);display:flex;align-items:center;gap:10px;}
+.bo-modal-header h2{font-family:'Bebas Neue',Impact,sans-serif;font-size:19px;letter-spacing:1px;flex:1;}
+.bo-modal-body{padding:20px;}
+.bo-modal-footer{padding:14px 20px;border-top:1px solid var(--navy-border);display:flex;justify-content:flex-end;gap:8px;}
+.bo-form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.bo-form-group label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);font-weight:500;}
+.bo-form-group input,.bo-form-group select{background:rgba(13,27,42,.8);border:1px solid var(--navy-border);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-family:'DM Sans','Segoe UI',Arial,sans-serif;font-size:13px;outline:none;}
+.bo-form-group input:focus,.bo-form-group select:focus{border-color:var(--gold-dim);}
+.bo-form-group select option{background:var(--navy-mid);}
+.bo-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0;}
+.perm-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px;}
+.perm-chip{font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(37,66,96,.5);color:var(--text-muted);border:1px solid var(--navy-border);cursor:pointer;transition:all .15s;}
+.perm-chip.on{background:rgba(201,168,76,.1);border-color:var(--gold-dim);color:var(--gold);}
+.warn-note{background:var(--warning-bg);border:1px solid rgba(240,165,0,.25);border-radius:var(--radius);padding:8px 12px;font-size:12px;color:var(--warning);margin-bottom:12px;}
+.audit-row{padding:10px 0;border-bottom:1px solid rgba(37,66,96,.3);font-size:12px;color:var(--text-muted);display:flex;gap:12px;}
+.audit-row:last-child{border-bottom:none;}
+.audit-time{font-family:'DM Mono','Courier New',monospace;font-size:11px;color:var(--text-dim);width:150px;flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<!-- BO LOGIN -->
+<div id="bo-login">
+  <div class="bo-login-card">
+    <div class="bo-lh">
+      <svg width="44" height="44" viewBox="0 0 52 52" fill="none" style="display:block;margin:0 auto 12px;"><path d="M26 3L5 11V25C5 36.6 14.8 47.3 26 50C37.2 47.3 47 36.6 47 25V11L26 3Z" fill="rgba(201,168,76,.15)" stroke="#C9A84C" stroke-width="2"/><rect x="18" y="22" width="16" height="12" rx="2" stroke="#C9A84C" stroke-width="1.5"/><circle cx="26" cy="19" r="4" stroke="#C9A84C" stroke-width="1.5"/></svg>
+      <h1>DMG Back Office</h1>
+      <p>Administrator Access Only</p>
+    </div>
+    <div class="bo-lbody">
+      <div id="bo-err" class="bo-err"></div>
+      <div class="bo-field"><label>Admin Email</label><input type="email" id="bo-email" placeholder="admin@dmgsecurity.com" autocomplete="email"></div>
+      <div class="bo-field"><label>Admin Password</label><input type="password" id="bo-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')boLogin()"></div>
+      <button class="bo-btn" onclick="boLogin()">Sign In to Back Office</button>
+    </div>
+  </div>
+</div>
+
+<!-- BO MAIN -->
+<div id="bo-main">
+  <div class="bo-topbar">
+    <div class="bo-logo">DMG Dispatcher <span>Back Office</span></div>
+    <div id="bo-welcome" style="font-size:12px;color:var(--text-muted);"></div>
+    <button class="bo-logout" onclick="boLogout()">Sign Out</button>
+  </div>
+  <div class="bo-shell">
+    <!-- Sidebar -->
+    <nav class="bo-sidebar">
+      <div class="bo-nav-section">Admin</div>
+      <div class="bo-nav-item active" onclick="boPage('overview')" id="bon-overview">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>
+        Overview
+      </div>
+      <div class="bo-nav-item" onclick="boPage('users')" id="bon-users">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M1 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M11 7c1.7 0 3 1.3 3 3s-1.3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        User Accounts
+      </div>
+      <div class="bo-nav-item" onclick="boPage('permissions')" id="bon-permissions">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="7" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Permissions
+      </div>
+      <div class="bo-nav-section">Logs</div>
+      <div class="bo-nav-item" onclick="boPage('audit')" id="bon-audit">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M4 6h8M4 9h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Audit Log
+      </div>
+      <div class="bo-nav-item" onclick="boPage('logins')" id="bon-logins">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M8 5v4l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Login History
+      </div>
+      <div class="bo-nav-section">Settings</div>
+      <div class="bo-nav-item" onclick="boPage('settings')" id="bon-settings">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M3 13l1.4-1.4M11.6 4.4L13 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Settings
+      </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="bo-main-content">
+
+      <!-- OVERVIEW PAGE -->
+      <div class="bo-page active" id="bop-overview">
+        <div class="bo-page-title">Back Office <span>Overview</span></div>
+        <div class="bo-stats" id="bo-stats-row"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="bo-table-wrap">
+            <div class="bo-table-header"><div class="bo-table-title">Recent Activity</div></div>
+            <div id="bo-recent-activity" style="padding:14px 18px;"></div>
+          </div>
+          <div class="bo-table-wrap">
+            <div class="bo-table-header"><div class="bo-table-title">Quick Credentials Reference</div></div>
+            <div style="padding:14px 18px;">
+              <div style="margin-bottom:12px;padding:10px 14px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:var(--radius);">
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--gold-dim);margin-bottom:6px;font-weight:600;">Admin</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.8;font-family:'DM Mono','Courier New',monospace;">
+                  Email: admin@dmgsecurity.com<br>
+                  Password: DMGAdmin2026!<br>
+                  <span style="color:var(--gold);">Role: Admin (full access)</span>
+                </div>
+              </div>
+              <div style="margin-bottom:12px;padding:10px 14px;background:var(--info-bg);border:1px solid rgba(74,159,213,.2);border-radius:var(--radius);">
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--info);margin-bottom:6px;font-weight:600;">Client Portal</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.8;font-family:'DM Mono','Courier New',monospace;">
+                  Email: client@dmgsecurity.com<br>
+                  Password: DMGClient2026!<br>
+                  <span style="color:var(--info);">Role: Client</span>
+                </div>
+              </div>
+              <div style="padding:10px 14px;background:var(--success-bg);border:1px solid rgba(46,204,138,.2);border-radius:var(--radius);">
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--success);margin-bottom:6px;font-weight:600;">Sample Contractors</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.8;font-family:'DM Mono','Courier New',monospace;">
+                  mwebb@falconsec.com / Falcon2026!<br>
+                  dhayward@guardianelite.com / Guardian2026!<br>
+                  <span style="color:var(--success);">Role: Contractor</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- USERS PAGE -->
+      <div class="bo-page" id="bop-users">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <div class="bo-page-title" style="margin-bottom:0;">User <span>Accounts</span></div>
+          <button class="bo-btn" style="width:auto;padding:9px 18px;font-size:11px;letter-spacing:.08em;" onclick="openAddUserModal()">＋ Add User</button>
+        </div>
+        <div class="bo-table-wrap">
+          <div class="bo-table-header">
+            <div class="bo-table-title">All Accounts (<span id="user-count">0</span>)</div>
+            <input id="user-search" placeholder="Search users…" style="background:rgba(13,27,42,.8);border:1px solid var(--navy-border);border-radius:var(--radius);padding:6px 11px;color:var(--text);font-size:12px;outline:none;width:220px;" oninput="renderUsers()">
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="bo-table" id="users-table">
+              <thead><tr>
+                <th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Contractor ID</th><th>Status</th><th>Permissions</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERMISSIONS PAGE -->
+      <div class="bo-page" id="bop-permissions">
+        <div class="bo-page-title">Role <span>Permissions</span></div>
+        <div class="bo-table-wrap" style="margin-bottom:16px;">
+          <div class="bo-table-header"><div class="bo-table-title">Permission Matrix</div></div>
+          <div style="overflow-x:auto;">
+            <table class="bo-table">
+              <thead><tr><th>Feature / Page</th><th>Admin</th><th>Client</th><th>Contractor</th></tr></thead>
+              <tbody>
+                ${[
+                  ['Dispatch Board (all orders)','✓','✓','Own bids only'],
+                  ['Revenue Dashboard','✓','✓','✗'],
+                  ['All Contractors page','✓','✓','✗'],
+                  ['Onboarding queue','✓','✓','✗'],
+                  ['Create / Edit Work Orders','✓','✓','✗'],
+                  ['Remove Work Orders','✓','✓','✗'],
+                  ['Dispatch to contractors','✓','✓','✗'],
+                  ['Approve contractors','✓','✓','✗'],
+                  ['Create contractors','✓','✓','✗'],
+                  ['Change WO / Contractor IDs','✓','✓','✗'],
+                  ['View other contractor names','✓','✓','✗'],
+                  ['Accept / Counter / Decline WO','✗','✗','✓'],
+                  ['Back Office (this panel)','✓','✗','✗'],
+                  ['Manage user accounts','✓','✗','✗'],
+                ].map(([f,a,c,ctr])=>`<tr><td style="color:var(--text);">${f}</td><td style="color:var(--gold);">${a}</td><td style="color:var(--info);">${c}</td><td style="color:var(--success);">${ctr}</td></tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="bo-table-wrap">
+          <div class="bo-table-header"><div class="bo-table-title">Per-User Permission Overrides</div></div>
+          <div id="perm-overrides" style="padding:14px 18px;"></div>
+        </div>
+      </div>
+
+      <!-- AUDIT LOG -->
+      <div class="bo-page" id="bop-audit">
+        <div class="bo-page-title">Audit <span>Log</span></div>
+        <div class="bo-table-wrap">
+          <div class="bo-table-header">
+            <div class="bo-table-title">System Events</div>
+            <select id="audit-filter" style="background:rgba(13,27,42,.8);border:1px solid var(--navy-border);border-radius:var(--radius);padding:6px 10px;color:var(--text-muted);font-size:12px;outline:none;" onchange="renderAudit()">
+              <option value="">All events</option>
+              <option value="login">Logins</option>
+              <option value="user">User changes</option>
+              <option value="perm">Permission changes</option>
+            </select>
+          </div>
+          <div id="audit-log-content" style="padding:14px 18px;max-height:500px;overflow-y:auto;"></div>
+        </div>
+      </div>
+
+      <!-- LOGIN HISTORY -->
+      <div class="bo-page" id="bop-logins">
+        <div class="bo-page-title">Login <span>History</span></div>
+        <div class="bo-table-wrap">
+          <div class="bo-table-header"><div class="bo-table-title">Recent Sign-Ins</div></div>
+          <div style="overflow-x:auto;">
+            <table class="bo-table">
+              <thead><tr><th>Timestamp</th><th>User</th><th>Email</th><th>Role</th><th>Result</th></tr></thead>
+              <tbody id="login-history-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="bo-page" id="bop-settings">
+        <div class="bo-page-title">System <span>Settings</span></div>
+        <div class="bo-table-wrap" style="margin-bottom:16px;">
+          <div class="bo-table-header"><div class="bo-table-title">Platform Settings</div></div>
+          <div style="padding:20px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div>
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin-bottom:8px;font-weight:500;">Company Name</div>
+                <input id="st-company" value="DMG Security &amp; Company" style="width:100%;background:rgba(13,27,42,.8);border:1px solid var(--navy-border);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-size:13px;outline:none;">
+              </div>
+              <div>
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin-bottom:8px;font-weight:500;">Platform Name</div>
+                <input id="st-platform" value="The DMG Dispatcher" style="width:100%;background:rgba(13,27,42,.8);border:1px solid var(--navy-border);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-size:13px;outline:none;">
+              </div>
+              <div>
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin-bottom:8px;font-weight:500;">Admin Email</div>
+                <input id="st-email" value="admin@dmgsecurity.com" style="width:100%;background:rgba(13,27,42,.8);border:1px solid var(--navy-border);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-size:13px;outline:none;">
+              </div>
+              <div>
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin-bottom:8px;font-weight:500;">Office Address</div>
+                <input value="2870 Peachtree Rd Ste #495, Atlanta, GA 30305" style="width:100%;background:rgba(13,27,42,.8);border:1px solid var(--navy-border);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-size:13px;outline:none;">
+              </div>
+            </div>
+            <div style="margin-top:16px;padding:12px 16px;background:rgba(46,204,138,.06);border:1px solid rgba(46,204,138,.2);border-radius:var(--radius);font-size:12px;color:var(--success);">
+              ✓ Settings are saved locally in this browser session. In production, these would sync to a backend database.
+            </div>
+          </div>
+        </div>
+        <div class="bo-table-wrap">
+          <div class="bo-table-header"><div class="bo-table-title">Change Admin Password</div></div>
+          <div style="padding:20px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+              <div>
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin-bottom:6px;font-weight:500;">Current Password</div>
+                <input type="password" id="pw-current" placeholder="Current password" style="width:100%;background:rgba(13,27,42,.8);border:1px solid var(--navy-border);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-size:13px;outline:none;">
+              </div>
+              <div>
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin-bottom:6px;font-weight:500;">New Password</div>
+                <input type="password" id="pw-new" placeholder="New password" style="width:100%;background:rgba(13,27,42,.8);border:1px solid var(--navy-border);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-size:13px;outline:none;">
+              </div>
+              <div>
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin-bottom:6px;font-weight:500;">Confirm New Password</div>
+                <input type="password" id="pw-confirm" placeholder="Confirm new password" style="width:100%;background:rgba(13,27,42,.8);border:1px solid var(--navy-border);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-size:13px;outline:none;">
+              </div>
+            </div>
+            <button onclick="changeAdminPassword()" style="padding:9px 20px;background:var(--gold);color:var(--navy);border:none;border-radius:var(--radius);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans','Segoe UI',Arial,sans-serif;">Update Password</button>
+            <span id="pw-msg" style="font-size:12px;margin-left:12px;"></span>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Modal Root -->
+<div id="bo-modal-root"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const BO_ADMIN = { email:'admin@dmgsecurity.com', password:'DMGAdmin2026!' };
+
+let BO_USERS = [
+  {id:'USR-001', email:'admin@dmgsecurity.com',     password:'DMGAdmin2026!',  role:'admin',      name:'DMG Administrator',              active:true,  contractorId:'',        permissions:['all'],                   createdAt:'2026-01-01', lastLogin:'2026-05-28'},
+  {id:'USR-002', email:'client@dmgsecurity.com',    password:'DMGClient2026!', role:'client',     name:'DMG Client Portal',              active:true,  contractorId:'',        permissions:['board','contractors','onboarding','dashboard'], createdAt:'2026-01-01', lastLogin:'2026-05-27'},
+  {id:'USR-003', email:'mwebb@falconsec.com',        password:'Falcon2026!',    role:'contractor', name:'Marcus Webb — Falcon Security',  active:true,  contractorId:'CTR-001', permissions:['board'],                 createdAt:'2026-02-14', lastLogin:'2026-05-25'},
+  {id:'USR-004', email:'dhayward@guardianelite.com', password:'Guardian2026!',  role:'contractor', name:'Denise Hayward — Guardian Elite',active:true,  contractorId:'CTR-002', permissions:['board'],                 createdAt:'2026-03-01', lastLogin:'2026-05-20'},
+];
+
+let AUDIT_LOG = [
+  {time:'2026-05-28 09:14', type:'login',  user:'admin@dmgsecurity.com',    action:'Admin signed in to Back Office'},
+  {time:'2026-05-27 16:30', type:'login',  user:'client@dmgsecurity.com',   action:'Client signed in to Dispatcher'},
+  {time:'2026-05-27 14:12', type:'user',   user:'admin@dmgsecurity.com',    action:'Created contractor CTR-004 — Vanguard Protection Group'},
+  {time:'2026-05-25 10:05', type:'login',  user:'mwebb@falconsec.com',      action:'Contractor signed in — Falcon Security Group (CTR-001)'},
+  {time:'2026-05-22 11:30', type:'perm',   user:'admin@dmgsecurity.com',    action:'Updated permissions for USR-003 (Marcus Webb)'},
+  {time:'2026-05-20 08:45', type:'login',  user:'dhayward@guardianelite.com',action:'Contractor signed in — Guardian Elite Services (CTR-002)'},
+  {time:'2026-05-18 15:00', type:'user',   user:'admin@dmgsecurity.com',    action:'Approved contractor CTR-002 — Guardian Elite Services'},
+  {time:'2026-05-15 09:30', type:'login',  user:'client@dmgsecurity.com',   action:'Client signed in to Dispatcher'},
+];
+
+let LOGIN_HISTORY = [
+  {time:'2026-05-28 09:14', user:'DMG Administrator',   email:'admin@dmgsecurity.com',    role:'admin',      result:'Success'},
+  {time:'2026-05-27 16:30', user:'DMG Client Portal',   email:'client@dmgsecurity.com',   role:'client',     result:'Success'},
+  {time:'2026-05-25 10:05', user:'Marcus Webb',          email:'mwebb@falconsec.com',       role:'contractor', result:'Success'},
+  {time:'2026-05-24 14:22', user:'Unknown',              email:'test@test.com',             role:'—',          result:'Failed'},
+  {time:'2026-05-20 08:45', user:'Denise Hayward',       email:'dhayward@guardianelite.com',role:'contractor', result:'Success'},
+];
+
+const ALL_PERMS = ['board','contractors','onboarding','dashboard','dispatch','approve','admin'];
+
+// ═══════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════
+function boLogin(){
+  const email=document.getElementById('bo-email').value.trim().toLowerCase();
+  const pass=document.getElementById('bo-pass').value;
+  const err=document.getElementById('bo-err');
+  if(email===BO_ADMIN.email.toLowerCase()&&pass===BO_ADMIN.password){
+    document.getElementById('bo-login').style.display='none';
+    document.getElementById('bo-main').style.display='block';
+    document.getElementById('bo-welcome').textContent='Signed in as: '+BO_ADMIN.email;
+    AUDIT_LOG.unshift({time:new Date().toLocaleString(),type:'login',user:email,action:'Admin signed in to Back Office'});
+    LOGIN_HISTORY.unshift({time:new Date().toLocaleString(),user:'DMG Administrator',email,role:'admin',result:'Success'});
+    renderAll();
+  } else {
+    err.textContent='Invalid admin credentials.';err.style.display='block';
+    LOGIN_HISTORY.unshift({time:new Date().toLocaleString(),user:'Unknown',email,role:'—',result:'Failed'});
+  }
+}
+function boLogout(){
+  document.getElementById('bo-login').style.display='flex';
+  document.getElementById('bo-main').style.display='none';
+  document.getElementById('bo-email').value='';
+  document.getElementById('bo-pass').value='';
+  document.getElementById('bo-err').style.display='none';
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function boPage(p){
+  document.querySelectorAll('.bo-page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.bo-nav-item').forEach(el=>el.classList.remove('active'));
+  const pg=document.getElementById('bop-'+p);
+  const nav=document.getElementById('bon-'+p);
+  if(pg)pg.classList.add('active');
+  if(nav)nav.classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+// RENDER FUNCTIONS
+// ═══════════════════════════════════════════
+function renderAll(){
+  renderStats();renderUsers();renderAudit();renderLoginHistory();renderPermOverrides();renderRecentActivity();
+}
+
+function renderStats(){
+  const el=document.getElementById('bo-stats-row');if(!el)return;
+  const total=BO_USERS.length;
+  const active=BO_USERS.filter(u=>u.active).length;
+  const contractors=BO_USERS.filter(u=>u.role==='contractor').length;
+  const admins=BO_USERS.filter(u=>u.role==='admin').length;
+  el.innerHTML=`
+    <div class="bo-stat bs-s1"><div class="bo-stat-label">Total Users</div><div class="bo-stat-val bs-sv1">${total}</div></div>
+    <div class="bo-stat bs-s2"><div class="bo-stat-label">Active Accounts</div><div class="bo-stat-val bs-sv2">${active}</div></div>
+    <div class="bo-stat bs-s3"><div class="bo-stat-label">Contractors</div><div class="bo-stat-val bs-sv3">${contractors}</div></div>
+    <div class="bo-stat bs-s4"><div class="bo-stat-label">Admin Accounts</div><div class="bo-stat-val bs-sv4">${admins}</div></div>
+  `;
+}
+
+function renderRecentActivity(){
+  const el=document.getElementById('bo-recent-activity');if(!el)return;
+  el.innerHTML=AUDIT_LOG.slice(0,6).map(a=>`
+    <div class="audit-row">
+      <div class="audit-time">${a.time}</div>
+      <div>${a.action}</div>
+    </div>`).join('');
+}
+
+function renderUsers(){
+  const tbody=document.getElementById('users-tbody');
+  const cnt=document.getElementById('user-count');
+  if(!tbody)return;
+  const q=(document.getElementById('user-search')?.value||'').toLowerCase();
+  const filtered=BO_USERS.filter(u=>!q||(u.name+u.email+u.role).toLowerCase().includes(q));
+  if(cnt)cnt.textContent=filtered.length;
+  tbody.innerHTML=filtered.map(u=>`<tr>
+    <td><span class="mono">${u.id}</span></td>
+    <td><div style="font-weight:500;color:var(--text);">${u.name}</div></td>
+    <td><span class="mono" style="font-size:11px;">${u.email}</span></td>
+    <td><span class="badge-sm ${u.role==='admin'?'bs-admin':u.role==='client'?'bs-client':'bs-contractor'}">${u.role}</span></td>
+    <td><span class="mono" style="font-size:11px;">${u.contractorId||'—'}</span></td>
+    <td><span class="badge-sm ${u.active?'bs-active':'bs-inactive'}">${u.active?'Active':'Inactive'}</span></td>
+    <td><div style="font-size:10px;color:var(--text-dim);">${u.permissions.join(', ')}</div></td>
+    <td>
+      <div style="display:flex;gap:5px;">
+        <button class="bo-btn-sm bo-btn-gold" onclick="openEditUserModal('${u.id}')">Edit</button>
+        <button class="bo-btn-sm" onclick="toggleUserActive('${u.id}')">${u.active?'Disable':'Enable'}</button>
+        <button class="bo-btn-sm" onclick="openResetPassModal('${u.id}')">Reset PW</button>
+        ${u.id!=='USR-001'?`<button class="bo-btn-sm bo-btn-danger" onclick="deleteUser('${u.id}')">Delete</button>`:''}
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function renderAudit(){
+  const el=document.getElementById('audit-log-content');if(!el)return;
+  const f=document.getElementById('audit-filter')?.value||'';
+  const filtered=f?AUDIT_LOG.filter(a=>a.type===f):AUDIT_LOG;
+  el.innerHTML=filtered.map(a=>`
+    <div class="audit-row">
+      <div class="audit-time">${a.time}</div>
+      <span class="badge-sm ${a.type==='login'?'bs-client':a.type==='perm'?'bs-admin':'bs-contractor'}" style="flex-shrink:0;">${a.type}</span>
+      <div style="flex:1;">${a.action} <span style="color:var(--text-dim);font-size:10px;">— ${a.user}</span></div>
+    </div>`).join('');
+}
+
+function renderLoginHistory(){
+  const tbody=document.getElementById('login-history-tbody');if(!tbody)return;
+  tbody.innerHTML=LOGIN_HISTORY.map(l=>`<tr>
+    <td><span class="mono" style="font-size:11px;">${l.time}</span></td>
+    <td style="color:var(--text);">${l.user}</td>
+    <td><span class="mono" style="font-size:11px;">${l.email}</span></td>
+    <td><span class="badge-sm ${l.role==='admin'?'bs-admin':l.role==='client'?'bs-client':l.role==='contractor'?'bs-contractor':'bs-inactive'}">${l.role}</span></td>
+    <td><span class="badge-sm ${l.result==='Success'?'bs-active':'bs-inactive'}">${l.result}</span></td>
+  </tr>`).join('');
+}
+
+function renderPermOverrides(){
+  const el=document.getElementById('perm-overrides');if(!el)return;
+  el.innerHTML=BO_USERS.filter(u=>u.role!=='admin').map(u=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(37,66,96,.3);">
+      <div style="min-width:180px;">
+        <div style="font-weight:500;font-size:13px;color:var(--text);">${u.name}</div>
+        <div style="font-size:10px;color:var(--text-dim);">${u.role} · ${u.id}</div>
+      </div>
+      <div class="perm-grid" id="perms-${u.id}">
+        ${ALL_PERMS.map(p=>`<span class="perm-chip ${u.permissions.includes(p)||u.permissions.includes('all')?'on':''}" onclick="togglePerm('${u.id}','${p}',this)">${p}</span>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// USER ACTIONS
+// ═══════════════════════════════════════════
+function toggleUserActive(id){
+  const u=BO_USERS.find(x=>x.id===id);if(!u||u.id==='USR-001')return;
+  u.active=!u.active;
+  AUDIT_LOG.unshift({time:new Date().toLocaleString(),type:'user',user:BO_ADMIN.email,action:`${u.active?'Enabled':'Disabled'} account: ${u.name} (${u.email})`});
+  renderAll();
+}
+
+function deleteUser(id){
+  const u=BO_USERS.find(x=>x.id===id);if(!u)return;
+  if(!confirm('Delete '+u.name+'? This cannot be undone.'))return;
+  AUDIT_LOG.unshift({time:new Date().toLocaleString(),type:'user',user:BO_ADMIN.email,action:`Deleted account: ${u.name} (${u.email})`});
+  BO_USERS=BO_USERS.filter(x=>x.id!==id);
+  renderAll();
+}
+
+function togglePerm(userId,perm,el){
+  const u=BO_USERS.find(x=>x.id===userId);if(!u)return;
+  if(u.permissions.includes(perm)){
+    u.permissions=u.permissions.filter(p=>p!==perm);
+    el.classList.remove('on');
+  } else {
+    u.permissions.push(perm);
+    el.classList.add('on');
+  }
+  AUDIT_LOG.unshift({time:new Date().toLocaleString(),type:'perm',user:BO_ADMIN.email,action:`Updated permissions for ${u.name}: ${u.permissions.join(', ')}`});
+}
+
+function openAddUserModal(){
+  showBoModal(`
+    <div class="bo-modal-header"><h2>Add New User</h2><button class="bo-btn-sm" onclick="closeBoModal()" style="margin-left:auto;">✕</button></div>
+    <div class="bo-modal-body">
+      <div class="bo-form-row">
+        <div class="bo-form-group"><label>Full Name *</label><input id="nu-name" placeholder="Full name"></div>
+        <div class="bo-form-group"><label>Role *</label>
+          <select id="nu-role" onchange="updateNewUserPerms()">
+            <option value="client">Client</option><option value="contractor">Contractor</option><option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="bo-form-row">
+        <div class="bo-form-group"><label>Email *</label><input id="nu-email" type="email" placeholder="email@company.com"></div>
+        <div class="bo-form-group"><label>Password *</label><input id="nu-pass" type="text" placeholder="Temporary password"></div>
+      </div>
+      <div class="bo-form-group"><label>Contractor ID (if contractor)</label><input id="nu-ctrid" placeholder="e.g. CTR-003"></div>
+      <div class="bo-form-group"><label>Permissions</label><div class="perm-grid" id="nu-perms">
+        ${ALL_PERMS.map(p=>`<span class="perm-chip ${['board'].includes(p)?'on':''}" onclick="this.classList.toggle('on')">${p}</span>`).join('')}
+      </div></div>
+    </div>
+    <div class="bo-modal-footer">
+      <button class="bo-btn-sm" onclick="closeBoModal()">Cancel</button>
+      <button class="bo-btn" style="width:auto;padding:8px 20px;font-size:11px;" onclick="saveNewUser()">Create User</button>
+    </div>
+  `);
+}
+
+function saveNewUser(){
+  const name=document.getElementById('nu-name').value.trim();
+  const email=document.getElementById('nu-email').value.trim();
+  const pass=document.getElementById('nu-pass').value.trim();
+  const role=document.getElementById('nu-role').value;
+  if(!name||!email||!pass){alert('Name, email, and password are required.');return;}
+  if(BO_USERS.find(u=>u.email.toLowerCase()===email.toLowerCase())){alert('That email is already registered.');return;}
+  const perms=[...document.querySelectorAll('#nu-perms .perm-chip.on')].map(el=>el.textContent);
+  const newId='USR-'+String(BO_USERS.length+1).padStart(3,'0');
+  BO_USERS.push({id:newId,email,password:pass,role,name,active:true,contractorId:document.getElementById('nu-ctrid').value.trim(),permissions:perms,createdAt:new Date().toISOString().split('T')[0],lastLogin:'Never'});
+  AUDIT_LOG.unshift({time:new Date().toLocaleString(),type:'user',user:BO_ADMIN.email,action:`Created new ${role} account: ${name} (${email})`});
+  closeBoModal();renderAll();
+}
+
+function openEditUserModal(id){
+  const u=BO_USERS.find(x=>x.id===id);if(!u)return;
+  showBoModal(`
+    <div class="bo-modal-header"><h2>Edit User — ${u.id}</h2><button class="bo-btn-sm" onclick="closeBoModal()" style="margin-left:auto;">✕</button></div>
+    <div class="bo-modal-body">
+      ${u.id==='USR-001'?'<div class="warn-note">⚠ Editing the primary admin account. Be careful.</div>':''}
+      <div class="bo-form-row">
+        <div class="bo-form-group"><label>Full Name</label><input id="eu-name" value="${u.name}"></div>
+        <div class="bo-form-group"><label>Role</label>
+          <select id="eu-role" ${u.id==='USR-001'?'disabled':''}>
+            <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+            <option value="client" ${u.role==='client'?'selected':''}>Client</option>
+            <option value="contractor" ${u.role==='contractor'?'selected':''}>Contractor</option>
+          </select>
+        </div>
+      </div>
+      <div class="bo-form-row">
+        <div class="bo-form-group"><label>Email</label><input id="eu-email" value="${u.email}"></div>
+        <div class="bo-form-group"><label>Contractor ID</label><input id="eu-ctrid" value="${u.contractorId||''}"></div>
+      </div>
+      <div class="bo-form-group"><label>Permissions</label><div class="perm-grid" id="eu-perms">
+        ${ALL_PERMS.map(p=>`<span class="perm-chip ${u.permissions.includes(p)||u.permissions.includes('all')?'on':''}" onclick="this.classList.toggle('on')">${p}</span>`).join('')}
+      </div></div>
+    </div>
+    <div class="bo-modal-footer">
+      <button class="bo-btn-sm" onclick="closeBoModal()">Cancel</button>
+      <button class="bo-btn" style="width:auto;padding:8px 20px;font-size:11px;" onclick="saveEditUser('${id}')">Save Changes</button>
+    </div>
+  `);
+}
+
+function saveEditUser(id){
+  const u=BO_USERS.find(x=>x.id===id);if(!u)return;
+  u.name=document.getElementById('eu-name').value.trim()||u.name;
+  u.email=document.getElementById('eu-email').value.trim()||u.email;
+  u.role=document.getElementById('eu-role').value;
+  u.contractorId=document.getElementById('eu-ctrid').value.trim();
+  u.permissions=[...document.querySelectorAll('#eu-perms .perm-chip.on')].map(el=>el.textContent);
+  AUDIT_LOG.unshift({time:new Date().toLocaleString(),type:'user',user:BO_ADMIN.email,action:`Updated account: ${u.name} (${u.email})`});
+  closeBoModal();renderAll();
+}
+
+function openResetPassModal(id){
+  const u=BO_USERS.find(x=>x.id===id);if(!u)return;
+  showBoModal(`
+    <div class="bo-modal-header"><h2>Reset Password — ${u.name}</h2><button class="bo-btn-sm" onclick="closeBoModal()" style="margin-left:auto;">✕</button></div>
+    <div class="bo-modal-body">
+      <div class="bo-form-group"><label>New Password *</label><input id="rp-pass" type="text" placeholder="Enter new password"></div>
+      <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">The user will need to be notified of their new password separately.</div>
+    </div>
+    <div class="bo-modal-footer">
+      <button class="bo-btn-sm" onclick="closeBoModal()">Cancel</button>
+      <button class="bo-btn" style="width:auto;padding:8px 20px;font-size:11px;" onclick="saveResetPass('${id}')">Set Password</button>
+    </div>
+  `);
+}
+
+function saveResetPass(id){
+  const pass=document.getElementById('rp-pass').value.trim();
+  if(!pass){alert('Password cannot be blank.');return;}
+  const u=BO_USERS.find(x=>x.id===id);if(!u)return;
+  u.password=pass;
+  AUDIT_LOG.unshift({time:new Date().toLocaleString(),type:'user',user:BO_ADMIN.email,action:`Reset password for: ${u.name} (${u.email})`});
+  closeBoModal();
+  alert('Password updated for '+u.name+'. Please notify them of their new credentials.');
+  renderAll();
+}
+
+function changeAdminPassword(){
+  const cur=document.getElementById('pw-current').value;
+  const nw=document.getElementById('pw-new').value;
+  const cf=document.getElementById('pw-confirm').value;
+  const msg=document.getElementById('pw-msg');
+  if(cur!==BO_ADMIN.password){if(msg){msg.style.color='var(--danger)';msg.textContent='Current password incorrect.';}return;}
+  if(!nw||nw.length<8){if(msg){msg.style.color='var(--danger)';msg.textContent='New password must be at least 8 characters.';}return;}
+  if(nw!==cf){if(msg){msg.style.color='var(--danger)';msg.textContent='Passwords do not match.';}return;}
+  BO_ADMIN.password=nw;
+  const adminUser=BO_USERS.find(u=>u.id==='USR-001');if(adminUser)adminUser.password=nw;
+  AUDIT_LOG.unshift({time:new Date().toLocaleString(),type:'user',user:BO_ADMIN.email,action:'Admin password changed'});
+  if(msg){msg.style.color='var(--success)';msg.textContent='✓ Password updated successfully.';}
+  document.getElementById('pw-current').value='';document.getElementById('pw-new').value='';document.getElementById('pw-confirm').value='';
+}
+
+// Modal helpers
+function showBoModal(html){
+  document.getElementById('bo-modal-root').innerHTML=`<div class="bo-modal-overlay" id="bo-modal-bg" onclick="if(event.target.id==='bo-modal-bg')closeBoModal()"><div class="bo-modal">${html}</div></div>`;
+}
+function closeBoModal(){document.getElementById('bo-modal-root').innerHTML='';}
+
+window.boLogin=boLogin;window.boLogout=boLogout;window.boPage=boPage;
+window.renderUsers=renderUsers;window.renderAudit=renderAudit;
+window.openAddUserModal=openAddUserModal;window.saveNewUser=saveNewUser;
+window.openEditUserModal=openEditUserModal;window.saveEditUser=saveEditUser;
+window.openResetPassModal=openResetPassModal;window.saveResetPass=saveResetPass;
+window.toggleUserActive=toggleUserActive;window.deleteUser=deleteUser;
+window.togglePerm=togglePerm;window.closeBoModal=closeBoModal;
+window.changeAdminPassword=changeAdminPassword;
+</script>
+</body>
+</html>
